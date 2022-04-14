@@ -1,7 +1,7 @@
 -module(broadcast_server).
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3,
-         terminate/2, start_link/1]).
+         terminate/2, start_link/2]).
 -include_lib("stdlib/include/ms_transform.hrl").
 -record(endpoint, {name, pid, aux}).
 
@@ -39,8 +39,8 @@ cast_all_workers(Workers, Request) ->
 
 divide_work(Workers, List) ->
     WorkersLen = length(Workers),
-    Work0 = util:part_list(List, WorkersLen),
-    Work = util:pad_list(Work0, WorkersLen, []),
+    Work0 = broadcast_util:part_list(List, WorkersLen),
+    Work = broadcast_util:pad_list(Work0, WorkersLen, []),
     SendAll = fun SendAll([], []) ->
                       ok;
                   SendAll([], _) ->
@@ -54,18 +54,18 @@ divide_work(Workers, List) ->
               end,    
     SendAll(Workers, Work).
 
-start_link(SupPid) ->
-    gen_server:start_link(?MODULE, [SupPid], []).
+start_link(SupPid, Workers) ->
+    gen_server:start_link(?MODULE, [SupPid, Workers], []).
 
-init([SupPid, Workers]) ->
+init([SupPid, NWorkers]) ->
     BaseState = #{sup => SupPid, state => init},
-    gen_server:cast(self(), {initialize, Workers}),
+    gen_server:cast(self(), {initialize, NWorkers}),
     {ok, BaseState}.
 
-handle_cast({initialize, Workers}, State0 = #{sup := SupPid, state := init}) ->
+handle_cast({initialize, NWorkers}, State0 = #{sup := SupPid, state := init}) ->
     Siblings = supervisor:which_children(SupPid),
     {_, Workersup, _, _} = lists:keyfind(workersup, 1, Siblings),
-    Workers = start_workers(Workersup, Workers),
+    Workers = start_workers(Workersup, NWorkers),
     Endpoints = ets:new(bcast_proc_table, [set, public, {keypos, #endpoint.name},
                                            {read_concurrency, true}]),
     State = State0#{sup => SupPid,
