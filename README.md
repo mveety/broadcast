@@ -1,7 +1,7 @@
 broadcast
 =====
 
-An OTP library
+Send messages to large numbers of processes
 
 Build
 -----
