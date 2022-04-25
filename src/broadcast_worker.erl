@@ -31,6 +31,8 @@ handle_call({update_pids, Pids}, _From, State0) ->
 handle_call({sendmsg, Msg}, _From, State = #{parent := Parent, pids := Pids}) ->
     sendmsgs(Parent, Pids, Msg),
     {reply, ok, State};
+handle_call(endpoints, _From, State = #{pids := Pids}) ->
+    {reply, {ok, Pids}, State};
 handle_call(stats, _From, State = #{name := Name, pids := Pids}) ->
     Stats = {Name, {num, length(Pids)}, {pids, Pids}},
     {reply, Stats, State};

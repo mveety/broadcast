@@ -134,6 +134,11 @@ handle_call({remove_endpoint, Name}, _From,
             {reply, ok, State}
     end;
 
+handle_call(endpoints, _From, State = #{endpoints := Endpoints}) ->
+    MS = ets:fun2ms(fun(#endpoint{pid = Pid}) -> Pid end),
+    EPlist = ets:select(Endpoints, MS),
+    {reply, {ok, EPlist}, State};
+
 handle_call(stats, _From, State = #{endpoints := Endpoints, workers := Workers}) ->
     WorkerStats = call_all_workers(Workers, stats),
     MS = ets:fun2ms(fun(X) -> X end),
