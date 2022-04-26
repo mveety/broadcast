@@ -9,17 +9,20 @@ start_link(Name, Workers) ->
 init([Workers]) ->
     Self = self(),
     SupFlags = #{strategy => one_for_all,
+                 auto_shutdown => any_significant,
                  intensity => 10,
                  period => 5},
     ChildSpecs = [
                   #{id => workersup,
                     start => {broadcast_worker_sup, start_link, []},
-                    restart => permanent,
+                    restart => temporary,
+                    significant => true,
                     type => supervisor},
                   #{id => broadcast_server,
                     start => {broadcast_server, start_link, [Self, Workers]},
-                    restart => permanent,
+                    restart => temporary,
                     type => worker,
+                    significant => true,
                     shutdown => brutal_kill}
                  ],
     {ok, {SupFlags, ChildSpecs}}.

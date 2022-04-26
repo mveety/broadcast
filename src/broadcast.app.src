@@ -3,6 +3,8 @@
   {vsn, git},
   {registered, []},
   {applications, [kernel,stdlib]},
-  {env,[]},
+  {env,[ {worker_rebalance, false}
+       , {worker_rebalance_multiplier, 1}
+       ]},
   {modules, []}
  ]}.

@@ -108,13 +108,17 @@ handle_call({add_endpoint, Name, Pid}, _From,
     true = ets:insert(Endpoints, Endpoint),
     Worker = select_random_worker(Workers),
     Ops = Ops0 + 1,
-    case Ops > length(Workers) of
-        true ->
+    DoRebalance = application:get_env(broadcast, worker_rebalance, false),
+    Multiplier = application:get_env(broadcast, worker_rebalance_multiplier, 1),
+    case {DoRebalance, Ops > length(Workers)*Multiplier} of
+        {true, true} ->
             MS = ets:fun2ms(fun(#endpoint{pid = P}) -> P end),
             Pids = ets:select(Endpoints, MS),
             divide_work(Workers, Pids),
             State = State0#{ops => 0};
-        false ->
+        {false, true} ->
+            State = State0#{ops => 0};
+        _ ->
             {_, WorkPid} = Worker,
             gen_server:cast(WorkPid, {add_pid, Pid}),
             State = State0#{ops => Ops}
