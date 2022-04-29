@@ -6,10 +6,10 @@
 sendmsgs(_, [], _) ->
     ok;
 sendmsgs(Parent, [Pid|T], Msg) ->
-    case is_process_alive(Pid) of
+    case rpc:call(node(Pid), erlang, is_process_alive, [Pid]) of
         true ->
             Pid ! Msg;
-        false ->
+        _ ->
             gen_server:cast(Parent, {defunct_pid, Pid}),
             gen_server:cast(self(), {remove_pid, Pid})
     end,
