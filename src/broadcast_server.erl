@@ -116,14 +116,19 @@ handle_call({add_endpoint, Name, Pid}, _From,
             Pids = ets:select(Endpoints, MS),
             divide_work(Workers, Pids),
             State = State0#{ops => 0};
-        {false, true} ->
-            State = State0#{ops => 0};
         _ ->
             {_, WorkPid} = Worker,
             gen_server:cast(WorkPid, {add_pid, Pid}),
             State = State0#{ops => Ops}
     end,
     {reply, ok, State};
+
+handle_call(rebalance, _From,
+            State = #{endpoints := Endpoints, workers := Workers}) ->
+    MS = ets:fun2ms(fun(#endpoint{pid = P}) -> P end),
+    Pids = ets:select(Endpoints, MS),
+    divide_work(Workers, Pids),
+    {reply, ok, State#{ops => 0}};
 
 handle_call({remove_endpoint, Name}, _From,
             State0 = #{endpoints := Endpoints, workers := Workers, ops := Ops}) ->

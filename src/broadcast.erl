@@ -1,6 +1,7 @@
 -module(broadcast).
 -export([get_server/1, add_endpoint/3, remove_endpoint/2, stats/1, send/2,
-         send_nowait/2, start_link/0, start_link/1, start_link/2, endpoints/1]).
+         send_nowait/2, start_link/0, start_link/1, start_link/2, endpoints/1,
+         rebalance/1]).
 
 get_server(SupPid) ->
     Siblings = supervisor:which_children(SupPid),
@@ -30,6 +31,10 @@ send_nowait(SupPid, Message) ->
 endpoints(SupPid) ->
     Server = get_server(SupPid),
     gen_server:call(Server, endpoints).
+
+rebalance(SupPid) ->
+    Server = get_server(SupPid),
+    gen_server:call(Server, rebalance).
 
 start_link() ->
     broadcast_sup:start_link(none, 4).
